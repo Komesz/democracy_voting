@@ -1,0 +1,39 @@
+name: voting_app_sego
+recipe: laravel
+exclude:
+  - node_modules
+config:
+  php: '8.2'
+  via: nginx
+  composer_version: 2-latest
+  webroot: ./public
+  cache: redis
+proxy:
+  appserver_nginx:
+    - voting.test
+  mailhog:
+    - mail.voting.test
+services:
+  appserver:
+    type: php:8.2
+  node:
+    type: node
+    scanner: false
+    ports:
+      - 3009:3009
+    build:
+      - npm install
+  mailhog:
+    type: mailhog
+    portforward: true
+    hogfrom:
+      - appserver
+tooling:
+  npm:
+    service: node
+  npx:
+    service: node
+  node:
+    service: node
+  redis-cli:
+    service: cache
