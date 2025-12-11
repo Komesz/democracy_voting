@@ -28,12 +28,12 @@ const fetchPoll = async () => {
 const submitVote = async (choice) => {
     await axios.post(`/api/polls/${pollId}/vote`, {choice, partyToken});
     voted.value = true;
-    window.localStorage.setItem(`voted-${pollId}`, true)
+    window.localStorage.setItem(`voted-${new Date().getUTCFullYear()}-${pollId}`, true)
 };
 
 onMounted(() => {
     fetchParty();
-    voted.value = window.localStorage.getItem(`voted-${pollId}`) ?? false;
+    voted.value = window.localStorage.getItem(`voted-${new Date().getUTCFullYear()}-${pollId}`) ?? false;
 
     fetchPoll();
     window.Echo.channel(`poll.${pollId}`).listen('VoteReceived', (vote) => {
