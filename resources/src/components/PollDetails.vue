@@ -5,11 +5,18 @@ import axios from 'axios';
 
 const route = useRoute();
 const pollId = route.params.id;
+const partyToken = route.params.partyToken;
 
 const poll = ref({});
+const party = ref({});
 const choices = ref([]);
 const results = ref({});
 const voted = ref(false);
+
+const fetchParty = async () => {
+    const response = await axios.get(`/api/parties/${partyToken}`);
+    party.value = response.data;
+};
 
 const fetchPoll = async () => {
     const response = await axios.get(`/api/polls/${pollId}`);
@@ -19,18 +26,19 @@ const fetchPoll = async () => {
 };
 
 const submitVote = async (choice) => {
-    await axios.post(`/api/polls/${pollId}/vote`, {choice});
+    await axios.post(`/api/polls/${pollId}/vote`, {choice, partyToken});
     voted.value = true;
     window.localStorage.setItem(`voted-${pollId}`, true)
 };
 
 onMounted(() => {
+    fetchParty();
     voted.value = window.localStorage.getItem(`voted-${pollId}`) ?? false;
 
     fetchPoll();
     window.Echo.channel(`poll.${pollId}`).listen('VoteReceived', (vote) => {
         if (results.value[vote.choice]) {
-            results.value[vote.choice]++;
+            results.value[vote.choice] += vote.mandates;
         } else {
             results.value[vote.choice] = 1;
         }
@@ -44,6 +52,11 @@ onMounted(() => {
 
 <template>
     <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <h1 class="text-5xl font-semibold mb-6">
+            {{ party.name }}
+            <span class="text-2xl text-gray-400">Mandátumok: ({{ party.mandates }})</span>
+        </h1>
+
         <h2 class="text-3xl font-semibold text-gray-800 mb-6">{{ poll.title }}</h2>
 
         <div v-if="poll.active !== 1" class="mt-6 text-center">
@@ -78,7 +91,7 @@ onMounted(() => {
         </div>
 
         <div class="mt-6">
-            <router-link to="/"
+            <router-link :to="`/${partyToken}`"
                          class="mt-5 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition ease-in-out duration-150">
                 Vissza
             </router-link>

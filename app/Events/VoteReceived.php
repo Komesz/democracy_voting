@@ -15,11 +15,13 @@ class VoteReceived implements ShouldBroadcastNow
 
     public $poll;
     public $choice;
+    public $mandates;
 
-    public function __construct(Poll $poll, $choice)
+    public function __construct(Poll $poll, $choice, $mandates)
     {
         $this->poll = $poll;
         $this->choice = $choice;
+        $this->mandates = $mandates;
     }
 
     // Broadcasting to a specific channel
@@ -34,6 +36,7 @@ class VoteReceived implements ShouldBroadcastNow
         return [
             'poll' => $this->poll,
             'choice' => $this->choice,
+            'mandates' => $this->mandates
         ];
     }
 }

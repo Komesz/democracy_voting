@@ -2,14 +2,19 @@
 import {onMounted, ref} from 'vue';
 import axios from 'axios';
 import {useRoute} from "vue-router";
+import CopyToClipboard from "./CopyToClipboard.vue";
 
 const route = useRoute();
 const token = route.params.token;
 
 const polls = ref([]);
+const parties = ref([]);
 
 const title = ref('');
 const choices = ref(['Igen', 'Nem', 'Tartózkodik']); // Start with one empty choice
+
+const partyName = ref('');
+const partyMandates = ref(1);
 
 const addChoice = () => {
     choices.value.push('');
@@ -51,6 +56,36 @@ const createPoll = async () => {
     }
 };
 
+const createParty = async () => {
+    if (!partyName.value.trim()) {
+        alert('A párt nevét meg kell adni.');
+        return;
+    }
+
+    if (!partyMandates.value || isNaN(partyMandates.value)) {
+        alert('A párt mandátumát meg kell adni.');
+        return;
+    }
+
+    try {
+        await axios.post('/api/parties', {
+            name: partyName.value,
+            mandates: partyMandates.value,
+            token: token
+        });
+
+        // Reset form
+        partyName.value = '';
+        partyMandates.value = 1;
+
+        fetchParties();
+        alert('Párt létrehozása sikeres!');
+    } catch (error) {
+        console.error(error);
+        alert('Párt létrehozása SIKERTELEN!');
+    }
+};
+
 const togglePoll = async (pollId) => {
     try {
         await axios.post(`/api/polls/${pollId}/toggle`, {
@@ -71,11 +106,17 @@ const fetchPolls = async () => {
     polls.value = response.data;
 };
 
+const fetchParties = async () => {
+    const response = await axios.get('/api/parties');
+    parties.value = response.data;
+};
+
 const formatDate = (date) => {
     return date.toString().replace(/(\d+)-(\d+)-(\d+)T(\d+):(\d+).*/, "$1-$2-$3 $4:$5");
 }
 
 onMounted(() => {
+    fetchParties();
     fetchPolls();
     window.Echo.channel('polls').listen('NewPollCreated', (poll) => {
         polls.value.push(poll.poll);
@@ -123,23 +164,54 @@ onMounted(() => {
             </div>
         </form>
 
+        <form class="space-y-4 mt-6" @submit.prevent="createParty">
+            <div>
+                <label for="partyName">Párt neve:</label>
+                <input
+                    class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ease-in-out duration-150"
+                    id="partyName" v-model="partyName" placeholder="Kérlek írd be a párt nevét!" required/>
+            </div>
+            <div>
+                <label for="title">Párt mandátumainak száma (ennyi szavazatot fog érni egy szavazatuk):</label>
+                <input
+                    type="number"
+                    class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ease-in-out duration-150"
+                    id="partyMandates" v-model="partyMandates" placeholder="Kérlek írd be a párt mandátumainak számát!" required/>
+            </div>
+            <div class="flex justify-between">
+                <button
+                    class="mt-5 px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition ease-in-out duration-150"
+                    type="submit">Párt létrehozása
+                </button>
+            </div>
+        </form>
+
         <div class="mt-6">
             <h3 class="text-2xl font-semibold text-gray-800 mb-6">Eddigi szavazások:</h3>
 
             <ul class="space-y-2">
                 <li v-for="poll in polls" :key="poll.id" class="flex justify-between items-center py-2 px-4 bg-gray-100 rounded-lg shadow-sm">
-                    <router-link :to="`/polls/${poll.id}`" class="w-full h-full text-gray-800 font-medium">
+                    <div class="w-full h-full text-gray-800 font-medium">
                         <div class="flex justify-between">
                             <span>{{ poll.title }}</span>
                             <span class="text-gray-400">{{ formatDate(poll.created_at) }}</span>
                         </div>
-                    </router-link>
+                    </div>
                     <form @submit.prevent="togglePoll(poll.id)">
                         <button
                             class="px-4 py-2 ml-2 text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition ease-in-out duration-150"
                             type="submit">{{ poll.active === 1 ? 'Lezárom' : 'Újraaktiválom' }}
                         </button>
                     </form>
+                </li>
+            </ul>
+        </div>
+
+        <div class="mt-6">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-6">Pártok:</h3>
+            <ul class="space-y-2">
+                <li v-for="party in parties" :key="party.id" class="flex justify-between items-center py-2 px-4 bg-gray-100 rounded-lg shadow-sm">
+                    <CopyToClipboard :name="party.name + ' (' + party.mandates + ' mandátum)'" :text="party.voting_link" class="text-gray-800 hover:underline" />
                 </li>
             </ul>
         </div>

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\PartyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,3 +20,9 @@ Route::post('/polls', [PollController::class, 'store']); // Create a new poll
 Route::get('/polls/{id}', [PollController::class, 'show']); // Get poll details
 Route::post('/polls/{id}/vote', [PollController::class, 'vote']); // Submit a vote
 Route::post('/polls/{id}/toggle', [PollController::class, 'toggleactivation']);
+
+Route::get('/parties', [PartyController::class, 'index']); // List all parties
+Route::post('/parties', [PartyController::class, 'store']); // Create a new party
+Route::get('/parties/{token}', [PartyController::class, 'show']); // Get party details
+Route::delete('/parties/{id}', [PartyController::class, 'destroy']); // Destroy a party
+Route::post('/parties/{id}/vote', [PartyController::class, 'vote']); // Submit a party

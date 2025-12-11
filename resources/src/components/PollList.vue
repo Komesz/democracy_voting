@@ -1,8 +1,19 @@
 <script setup>
 import { ref, onMounted } from 'vue';
+import {useRoute} from 'vue-router';
 import axios from 'axios';
 
+const route = useRoute();
+const partyToken = route.params.partyToken;
+
 const polls = ref([]);
+const party = ref({});
+
+const fetchParty = async () => {
+    const response = await axios.get(`/api/parties/${partyToken}`);
+    party.value = response.data;
+};
+
 
 const fetchPolls = async () => {
     const response = await axios.get('/api/polls');
@@ -14,6 +25,7 @@ const formatDate = (date) => {
 }
 
 onMounted(() => {
+    fetchParty();
     fetchPolls();
     window.Echo.channel('polls').listen('NewPollCreated', (poll) => {
         polls.value.push(poll.poll);
@@ -23,12 +35,16 @@ onMounted(() => {
 
 <template>
     <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <h1 class="text-5xl font-semibold mb-6">
+            {{ party.name }}
+            <span class="text-2xl text-gray-400">Mandátumok: ({{ party.mandates }})</span>
+        </h1>
         <h2 class="text-3xl font-semibold text-gray-800 mb-6">Szavazások:</h2>
 
         <div class="mt-6">
             <ul class="space-y-2">
                 <li v-for="poll in polls" :key="poll.id" class="flex justify-between items-center py-2 px-4 bg-gray-100 rounded-lg shadow-sm">
-                    <router-link :to="`/polls/${poll.id}`" class="w-full h-full text-gray-800 font-medium">
+                    <router-link :to="`/polls/${poll.id}/${partyToken}`" class="w-full h-full text-gray-800 font-medium">
                         <div class="flex justify-between">
                             <span>{{ poll.title }}</span>
                             <span class="text-gray-400">{{ formatDate(poll.created_at) }}</span>

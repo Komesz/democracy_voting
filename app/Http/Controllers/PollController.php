@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Party;
 use App\Models\Poll;
 use Illuminate\Http\Request;
 
@@ -69,6 +70,8 @@ class PollController extends Controller
     // Submit a vote
     public function vote(Request $request, $id)
     {
+        $party = Party::query()->where('token', $request->input('partyToken'))->firstOrFail();
+
         $poll = Poll::findOrFail($id);
 
         $validated = $request->validate([
@@ -77,12 +80,12 @@ class PollController extends Controller
 
         $choice = $validated['choice'];
         $results = $poll->results;
-        $results[$choice]++;
+        $results[$choice] += $party->mandates;
         $poll->results = $results;
         $poll->save();
 
         // Broadcast the vote to clients
-        broadcast(new \App\Events\VoteReceived($poll, $choice));
+        broadcast(new \App\Events\VoteReceived($poll, $choice, $party->mandates));
 
         return response()->json($poll);
     }
