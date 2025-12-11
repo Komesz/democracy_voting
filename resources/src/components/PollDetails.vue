@@ -26,8 +26,8 @@ const fetchPoll = async () => {
 };
 
 const submitVote = async (choice) => {
-    await axios.post(`/api/polls/${pollId}/vote`, {choice, partyToken});
     voted.value = true;
+    await axios.post(`/api/polls/${pollId}/vote`, {choice, partyToken});
     window.localStorage.setItem(`voted-${new Date().getUTCFullYear()}-${pollId}`, true)
 };
 
