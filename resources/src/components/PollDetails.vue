@@ -40,7 +40,7 @@ onMounted(() => {
         if (results.value[vote.choice]) {
             results.value[vote.choice] += vote.mandates;
         } else {
-            results.value[vote.choice] = 1;
+            results.value[vote.choice] = vote.mandates;
         }
     });
 
